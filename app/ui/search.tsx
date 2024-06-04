@@ -38,6 +38,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
         placeholder={placeholder}
         // pass an anonymous function taking in the event object or (e), and passing that events.target.value to the handleSearch function.
         onChange={(e) => handleSearch(e.target.value)}
+        defaultValue={searchParams.get('query')?.toString()}
       />
       <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
     </div>
