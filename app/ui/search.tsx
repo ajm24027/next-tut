@@ -3,6 +3,7 @@
 // URLSearchParams is a Web API that provides utility methods for manipulating the URL query parameters. Instead of creating a complex string literal, you can use it to get the params string like ?page=1&query=a.
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { useDebouncedCallback } from 'use-debounce';
 
 export default function Search({ placeholder }: { placeholder: string }) {
   // 2. Initialize Search params
@@ -12,7 +13,8 @@ export default function Search({ placeholder }: { placeholder: string }) {
 
   // 1. Capture the user input > we use the handleSearch to take in a string.
   // 3. Create an instance of searchParams based on the term coming from the handleSearch Function.
-  function handleSearch(term: string) {
+  const handleSearch = useDebouncedCallback((term) => {
+    console.log(`Searching... ${term}`);
     const params = new URLSearchParams(searchParams);
     // set - what looks to be a method, updates the params based on user input. If it's empty, use delete method to delete the 'query'.
     if (term) {
@@ -26,7 +28,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
     // Pathname is the usePathname() which sense our current path or /dashboard/invoices.
     // When we go params.set() we're creating the params that follow that path. Or in our case ('query', term)
     // The params is query and the query is = term.
-  }
+  }, 300);
 
   return (
     <div className="relative flex flex-1 flex-shrink-0">
@@ -44,3 +46,11 @@ export default function Search({ placeholder }: { placeholder: string }) {
     </div>
   );
 }
+
+// Debouncing is a programming practice that limits the rate at which a function can fire. In our case, you only want to query the database when the user has stopped typing.
+
+// Trigger Event: When an event that should be debounced (like a keystroke in the search box) occurs, a timer starts.
+// Wait: If a new event occurs before the timer expires, the timer is reset.
+// Execution: If the timer reaches the end of its countdown, the debounced function is executed.
+
+// By debouncing, you can reduce the number of requests sent to your database, thus saving resources.
