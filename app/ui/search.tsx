@@ -18,6 +18,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
     console.log(`Searching... ${term}`);
     // 2. Initialize a params variable that is a new URLSearchParams object.
     const params = new URLSearchParams(searchParams);
+    params.set('page', '1');
     // If term is present, SET the search param of Query to whatever term is. If there is no term (which is how it should be at the start), delete 'query' from the search params in the URL.
     if (term) {
       params.set('query', term);
