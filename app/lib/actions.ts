@@ -37,11 +37,21 @@ export async function createInvoice(formData: FormData) {
   });
   const amountInCents = amount * 100;
   const date = new Date().toISOString().split('T')[0];
-  // console.log({ customerId, amountInCents, status, date }, typeof amount);
-  await sql`
+
+  // above we handle the action logic, once we have all of the database values added and formatted, then we try to add it to the database, and catch an error if there's an issue.
+
+  // The try...catch statement is comprised of a try block and either a catch block, a finally block, or both. The code in the try block is executed first, and if it throws an exception - error, the code in the catch block will be executed. The code in the finally block will always be executed before control flow exits the entire construct.
+
+  try {
+    await sql`
   INSERT INTO invoices (customer_id, amount, status, date)
   VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
 `;
+  } catch (error) {
+    return {
+      message: 'Database Error: Failed to create invoice.',
+    };
+  }
 
   // NextJS caches data from previously navigated pages. At this point, on /dashboard/invoices/create, when we insert the new database document, the cached data from /dashboard/invoices is out of sync - it has only the data from before we create the new db entry. The revalidation method will "refresh" the data that's displayed in /dashboard/invoices.
   revalidatePath('/dashboard/invoices');
@@ -58,17 +68,29 @@ export async function updateInvoice(id: string, formData: FormData) {
 
   const amountInCents = amount * 100;
 
-  await sql`
-    UPDATE invoices
-    SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-    WHERE id = ${id}
-  `;
+  try {
+    await sql`
+        UPDATE invoices
+        SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+        WHERE id = ${id}
+      `;
+  } catch (error) {
+    return { message: 'Database Error: Failed to Update Invoice.' };
+  }
 
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
 
 export async function deleteInvoice(id: string) {
-  await sql`DELETE FROM invoices WHERE id = ${id}`;
-  revalidatePath('/dashboard/invoices');
+  throw new Error('failed to delete invoice');
+  try {
+    await sql`DELETE FROM invoices WHERE id = ${id}`;
+    revalidatePath('/dashboard/invoices');
+    return { message: 'Deleted Invoice.' };
+  } catch (error) {
+    return { message: 'Database Error: Failed to Delete Invoice.' };
+  }
 }
+
+// Note how redirect is being called outside of the try/catch block. This is because redirect works by throwing an error, which would be caught by the catch block. To avoid this, you can call redirect after try/catch. redirect would only be reachable if try is successful.
