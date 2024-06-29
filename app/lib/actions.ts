@@ -15,12 +15,27 @@ import { redirect } from 'next/navigation';
 // Here we're creating a formSchema, to me this feels similar to type declaration, but in this case, we're declaring what properties should be and how they should be validated.
 const FormSchema = z.object({
   id: z.string(),
-  customerId: z.string(),
+  // Invalid Type error is an accessibility property to give better feedback to our users.
+  customerId: z.string({ invalid_type_error: 'Please select a customer.' }),
   // amount is both being coerced into a number and validated (is it a number?)
-  amount: z.coerce.number(),
-  status: z.enum(['pending', 'paid']),
+  // Because of the coercion from string to number, it'll default to 0 if the string is empty. With .gt, we'll tell it that we always want an amount greater or gt than 0.
+  amount: z.coerce
+    .number()
+    .gt(0, { message: 'Please enter an amount greater than $0.' }),
+  status: z.enum(['pending', 'paid'], {
+    invalid_type_error: 'Please select an invoice status',
+  }),
   date: z.string(),
 });
+
+export type State = {
+  errors?: {
+    customerId?: string[];
+    amount?: string[];
+    status?: string[];
+  };
+  message?: string | null;
+};
 
 // We're creating a new FormSchema object with id and date omitted. As far as I know, this is because we're defining a custom date string later. And id is usually as I understand is created by the database itself.
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
@@ -28,13 +43,26 @@ const CreateInvoice = FormSchema.omit({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 
 // This is defining a function that's taking in the data input from the form based on the form input IDs as arguments. It should be type formData.
-export async function createInvoice(formData: FormData) {
-  // We're destructuring the customerId, amount, and status values from the validated return object from the CreateInvoice.parse(). And we're passing in those formData from the forms, and assigning them them to keys (customerId, amount, status) which eventually be returned within the object.
-  const { customerId, amount, status } = CreateInvoice.parse({
+export async function createInvoice(prevState: State, formData: FormData) {
+  // safeParse() will return an object containing either a success or error field. This will help handle validation more gracefully without having put this logic inside the try/catch block.
+
+  const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   });
+
+  // If form validation fails, return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create Invoice.',
+    };
+  }
+
+  // Prepare data for insertion into the database
+  // We're destructuring the customerId, amount, and status values from the validated return object from the CreateInvoice.safeParse(). And we're passing in those formData from the forms, and assigning them them to keys (customerId, amount, status) which eventually be returned within the object.
+  const { customerId, amount, status } = validatedFields.data;
   const amountInCents = amount * 100;
   const date = new Date().toISOString().split('T')[0];
 
