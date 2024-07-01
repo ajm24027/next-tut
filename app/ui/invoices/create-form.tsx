@@ -9,14 +9,13 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/app/ui/button';
+// updated this import to include the State Data Type/Shape
 import { createInvoice, State } from '@/app/lib/actions';
 import { useFormState } from 'react-dom';
 
 export default function Form({ customers }: { customers: CustomerField[] }) {
   const initialState: State = { message: null, errors: {} };
   const [state, formAction] = useFormState(createInvoice, initialState);
-
-  console.log(state);
   return (
     // Good to know: In HTML, you'd pass a URL to the action attribute. This URL would be the destination where your form data should be submitted (usually an API endpoint).
     // However, in React, the action attribute is considered a special prop - meaning React builds on top of it to allow actions to be invoked.
